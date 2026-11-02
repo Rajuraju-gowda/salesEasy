@@ -11,7 +11,7 @@ SalesEasy is an FMCG field-sales operational intelligence copilot. It reads unst
 
 - **Backend**: Python 3.13 / FastAPI / Pydantic / Uvicorn.
 - **Frontend**: Modern React 18 UI with real-time analysis, scenario quick-pickers, traceable evidence cards, and an automated evaluation suite runner.
-- **LLM Architecture**: Pluggable LLM Adapter supporting **Google Gemini API**, **OpenAI GPT-4o API**, and a built-in **Deterministic Copilot Engine** that runs offline with 100% test scenario fidelity.
+- **LLM Architecture**: Pluggable LLM Adapter supporting **Google Gemini API** (Gemini 1.5/2.0) and a built-in **Deterministic Copilot Engine** that runs offline with 100% test scenario fidelity.
 - **Safety Guardrails**:
   - Deterministic pre-execution prompt injection detection.
   - Hard constraint against fabricating lost sales dollar figures.
@@ -49,7 +49,7 @@ SalesEasy is an FMCG field-sales operational intelligence copilot. It reads unst
                                            ▼
                       ┌─────────────────────────────────────────┐
                       │              LLM Adapter                │
-                      │  (Gemini API / OpenAI / Mock Engine)    │ ──► [Timeout/Error] ──► Graceful Fallback
+                      │   (Gemini 1.5 API / Mock Engine)        │ ──► [Timeout/Error] ──► Graceful Fallback
                       └────────────────────┬────────────────────┘
                                            │
                                            ▼
@@ -143,13 +143,13 @@ Open your browser to:
 
 *(Note: The FastAPI backend serves the React application directly at `http://localhost:8000`, so no separate Node.js build process is required for evaluating the app!)*
 
-### 2. Optional: Configure Live LLM API Keys
+### 2. Optional: Configure Live Gemini API Key
 By default, the application runs on the built-in **Deterministic Copilot Engine** requiring **zero external API keys**.  
-If you wish to use live Google Gemini or OpenAI:
+If you wish to use live Google Gemini:
 
 ```bash
 cp .env.example .env
-# Edit .env and supply GEMINI_API_KEY or OPENAI_API_KEY
+# Edit .env and supply GEMINI_API_KEY=your_key_here
 ```
 
 ### 3. Run Automated Unit Tests
@@ -241,3 +241,4 @@ Routine low-risk updates matching system counts without hazards pass through aut
 4. **Evaluation & Wrap-up (3:30 - 4:00)**:
    - Click **Automated Evaluation Suite** tab and run the live 8/8 test suite.
    - Discuss production improvements (vision input, CDC ERP connectors).
+

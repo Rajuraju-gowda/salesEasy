@@ -1,4 +1,4 @@
-"""LLM Adapter supporting Live Gemini/OpenAI API calls and a high-fidelity deterministic Mock Engine."""
+"""LLM Adapter supporting Live Google Gemini API calls and a high-fidelity deterministic Mock Engine."""
 import os
 import re
 import json
@@ -23,18 +23,11 @@ from app.guardrails import (
 class LLMAdapter:
     def __init__(self):
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
-        self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        self.default_model = "rule_assisted_mock"
-        if self.gemini_api_key:
-            self.default_model = "live_gemini"
-        elif self.openai_api_key:
-            self.default_model = "live_openai"
+        self.default_model = "live_gemini" if self.gemini_api_key else "rule_assisted_mock"
 
     def get_active_provider(self) -> str:
         if self.gemini_api_key:
             return "live_gemini (Google Gemini 1.5/2.0 API)"
-        if self.openai_api_key:
-            return "live_openai (OpenAI GPT-4o API)"
         return "rule_assisted_mock (Deterministic Copilot Engine)"
 
     def analyze(
@@ -85,21 +78,19 @@ class LLMAdapter:
             return analysis
 
         # Determine execution engine
-        selected_mode = force_mode if force_mode in ["mock", "live"] else ("live" if (self.gemini_api_key or self.openai_api_key) else "mock")
+        selected_mode = force_mode if force_mode in ["mock", "live"] else ("live" if self.gemini_api_key else "mock")
 
         analysis = None
         if selected_mode == "live":
             try:
                 if self.gemini_api_key:
                     analysis = self._call_gemini_api(field_update, verified_records, outlet_hint)
-                elif self.openai_api_key:
-                    analysis = self._call_openai_api(field_update, verified_records, outlet_hint)
             except Exception as e:
                 # Upstream LLM failed: Graceful Fallback
                 return self._handle_graceful_fallback(
                     field_update=field_update,
                     verified_records=verified_records,
-                    error_message=f"Live LLM call failed ({str(e)}). Switched to Graceful Safety Fallback.",
+                    error_message=f"Live Gemini API call failed ({str(e)}). Switched to Graceful Safety Fallback.",
                     start_time=start_time,
                 )
 
@@ -140,28 +131,6 @@ class LLMAdapter:
             parsed = json.loads(raw_text)
             parsed["model_mode"] = "live_gemini"
             return SalesCopilotAnalysis(**parsed)
-
-    def _call_openai_api(
-        self, field_update: str, verified_records: List[Dict[str, Any]], outlet_hint: Optional[str]
-    ) -> SalesCopilotAnalysis:
-        """Call OpenAI API using official client."""
-        from openai import OpenAI
-        client = OpenAI(api_key=self.openai_api_key)
-        user_prompt = format_user_prompt(field_update, verified_records, outlet_hint)
-
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.1,
-        )
-        content = response.choices[0].message.content
-        parsed = json.loads(content)
-        parsed["model_mode"] = "live_openai"
-        return SalesCopilotAnalysis(**parsed)
 
     def _deterministic_copilot_engine(
         self, field_update: str, verified_records: List[Dict[str, Any]], outlet_hint: Optional[str]

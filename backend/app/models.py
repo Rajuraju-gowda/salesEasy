@@ -64,7 +64,7 @@ class SalesCopilotAnalysis(BaseModel):
     )
     model_mode: Optional[str] = Field(
         default="rule_assisted_mock",
-        description="Execution mode: live_gemini, live_openai, rule_assisted_mock, fallback_safety.",
+        description="Execution mode: live_gemini, rule_assisted_mock, fallback_safety.",
     )
     latency_ms: Optional[float] = Field(
         default=0.0, description="Processing latency in milliseconds."
@@ -112,3 +112,4 @@ class EvaluationResultItem(BaseModel):
     actual_review: bool
     notes: str
     analysis: SalesCopilotAnalysis
+

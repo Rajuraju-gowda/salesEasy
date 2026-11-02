@@ -19,3 +19,4 @@ if __name__ == "__main__":
     print(f"📑 API Docs:      http://localhost:{port}/docs")
     print(f"=" * 60 + "\n")
     uvicorn.run("app.api:app", host=host, port=port, reload=False)
+

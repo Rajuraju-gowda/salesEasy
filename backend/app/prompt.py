@@ -74,3 +74,4 @@ def format_user_prompt(
 </field_update>
 
 Analyze the field update against the verified system inventory records. Return strictly valid JSON following the required schema."""
+

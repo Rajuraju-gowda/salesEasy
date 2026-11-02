@@ -41,5 +41,5 @@ class SalesCopilot:
             "active_provider": self.llm_adapter.get_active_provider(),
             "default_model": self.llm_adapter.default_model,
             "has_gemini_key": bool(self.llm_adapter.gemini_api_key),
-            "has_openai_key": bool(self.llm_adapter.openai_api_key),
         }
+
