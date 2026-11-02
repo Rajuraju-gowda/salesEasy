@@ -4,6 +4,11 @@ import re
 import json
 import time
 import httpx
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 from typing import Dict, Any, List, Optional, Tuple
 from app.models import (
     SalesCopilotAnalysis,
@@ -22,6 +27,7 @@ from app.guardrails import (
 
 class LLMAdapter:
     def __init__(self):
+        load_dotenv()
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
         self.default_model = "live_gemini" if self.gemini_api_key else "rule_assisted_mock"
 
@@ -109,8 +115,8 @@ class LLMAdapter:
     def _call_gemini_api(
         self, field_update: str, verified_records: List[Dict[str, Any]], outlet_hint: Optional[str]
     ) -> SalesCopilotAnalysis:
-        """Call Gemini REST API directly."""
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_api_key}"
+        """Call Gemini REST API directly with structured response parsing."""
+        models_to_try = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
         user_prompt = format_user_prompt(field_update, verified_records, outlet_hint)
         
         payload = {
@@ -123,14 +129,34 @@ class LLMAdapter:
             },
         }
 
-        with httpx.Client(timeout=10.0) as client:
-            resp = client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
-            parsed = json.loads(raw_text)
-            parsed["model_mode"] = "live_gemini"
-            return SalesCopilotAnalysis(**parsed)
+        last_error = None
+        for model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.gemini_api_key}"
+            try:
+                with httpx.Client(timeout=15.0) as client:
+                    resp = client.post(url, json=payload)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        raw_text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        # Clean possible markdown wrapping
+                        if raw_text.startswith("```json"):
+                            raw_text = raw_text[7:]
+                        elif raw_text.startswith("```"):
+                            raw_text = raw_text[3:]
+                        if raw_text.endswith("```"):
+                            raw_text = raw_text[:-3]
+                        raw_text = raw_text.strip()
+
+                        parsed = json.loads(raw_text)
+                        parsed["model_mode"] = f"live_gemini ({model})"
+                        return SalesCopilotAnalysis(**parsed)
+                    else:
+                        last_error = f"Model {model} returned HTTP {resp.status_code}: {resp.text}"
+            except Exception as e:
+                last_error = str(e)
+                continue
+
+        raise RuntimeError(f"All Gemini models failed. Last error: {last_error}")
 
     def _deterministic_copilot_engine(
         self, field_update: str, verified_records: List[Dict[str, Any]], outlet_hint: Optional[str]
