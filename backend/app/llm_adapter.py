@@ -87,18 +87,20 @@ class LLMAdapter:
         selected_mode = force_mode if force_mode in ["mock", "live"] else ("live" if self.gemini_api_key else "mock")
 
         analysis = None
-        if selected_mode == "live":
+        if selected_mode == "live" or (force_mode == "auto" and self.gemini_api_key):
             try:
-                if self.gemini_api_key:
-                    analysis = self._call_gemini_api(field_update, verified_records, outlet_hint)
+                analysis = self._call_gemini_api(field_update, verified_records, outlet_hint)
             except Exception as e:
-                # Upstream LLM failed: Graceful Fallback
-                return self._handle_graceful_fallback(
-                    field_update=field_update,
-                    verified_records=verified_records,
-                    error_message=f"Live Gemini API call failed ({str(e)}). Switched to Graceful Safety Fallback.",
-                    start_time=start_time,
-                )
+                # If explicitly forcing live mode, engage graceful fallback
+                if force_mode == "live":
+                    return self._handle_graceful_fallback(
+                        field_update=field_update,
+                        verified_records=verified_records,
+                        error_message=f"Live Gemini API call failed ({str(e)}). Switched to Graceful Safety Fallback.",
+                        start_time=start_time,
+                    )
+                # In auto mode, seamlessly fall back to deterministic copilot engine
+                analysis = None
 
         # Fallback to or use deterministic copilot engine
         if analysis is None:
