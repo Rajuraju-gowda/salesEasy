@@ -22,3 +22,4 @@ except Exception as e:
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"status": "degraded", "error": str(e)})
         }
+
