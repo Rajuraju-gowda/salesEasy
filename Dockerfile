@@ -16,3 +16,4 @@ EXPOSE 8000
 
 # Start SalesEasy Copilot (serves both API and React UI)
 CMD ["python", "run.py"]
+
