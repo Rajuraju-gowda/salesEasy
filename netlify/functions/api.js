@@ -389,3 +389,4 @@ exports.handler = async (event) => {
     body: JSON.stringify({ detail: `Route ${path} not found.` })
   };
 };
+
