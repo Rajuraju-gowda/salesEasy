@@ -5,18 +5,36 @@
 [functions]
   directory = "netlify/functions"
 
+# 1. Swagger UI and OpenAPI docs
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/api/:splat"
+  from = "/docs"
+  to = "/.netlify/functions/api/docs"
   status = 200
 
+[[redirects]]
+  from = "/openapi.json"
+  to = "/.netlify/functions/api/openapi.json"
+  status = 200
+
+[[redirects]]
+  from = "/redoc"
+  to = "/.netlify/functions/api/redoc"
+  status = 200
+
+# 2. Health check
 [[redirects]]
   from = "/health"
   to = "/.netlify/functions/api/health"
   status = 200
 
+# 3. API endpoints
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/api/:splat"
+  status = 200
+
+# 4. Frontend SPA fallback (must be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
